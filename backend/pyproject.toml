@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "smart-writer-book-backend"
+version = "0.1.0"
+description = "Next Gen AI Smart Writer App"
+authors = ["Noman Majeed <nomanmajeed986@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+django = "^5.1.4"
+djangorestframework = "^3.15.2"
+django-cors-headers = "^4.6.0"
+channels = "^4.2.0"
+psycopg2-binary = "^2.9.10"
+python-dotenv = "^1.0.1"
+spacy = "^3.8.2"
+transformers = "^4.47.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-django = "^4.9.0"
+black = "^24.10.0"
+isort = "^5.13.2"
+mypy = "^1.13.0"
+pytest-cov = "^6.0.0"
+flake8 = "^7.1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
