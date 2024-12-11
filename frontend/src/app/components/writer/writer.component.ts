@@ -1,104 +1,71 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import Quill from 'quill';
-import { WriterService } from '../../services/writer.service';
+import { MatListModule } from '@angular/material/list';
+import type Quill from 'quill';
+import { quillConfig } from './quill.config';
 
 @Component({
   selector: 'app-writer',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
-  template: `
-    <mat-card class="writer-container">
-      <mat-card-header>
-        <mat-card-title>Smart Writer</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div #editor class="editor-container"></div>
-        <div class="suggestions-panel" *ngIf="suggestions">
-          <h3>AI Suggestions</h3>
-          <p>{{ suggestions }}</p>
-        </div>
-      </mat-card-content>
-      <mat-card-actions>
-        <button mat-raised-button color="primary" (click)="getAISuggestions()" [disabled]="isLoading">
-          Get AI Suggestions
-          <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  `,
-  styles: [`
-    .writer-container {
-      margin: 20px;
-      max-width: 1200px;
-      margin: 20px auto;
-    }
-    .editor-container {
-      height: 400px;
-      margin-bottom: 20px;
-    }
-    .suggestions-panel {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-    }
-    mat-card-actions {
-      display: flex;
-      justify-content: flex-end;
-      padding: 16px;
-    }
-    button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-  `]
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatListModule
+  ],
+  templateUrl: './writer.component.html',
+  styleUrls: ['./writer.component.css']
 })
 export class WriterComponent implements OnInit {
-  @ViewChild('editor') editorElement!: ElementRef;
-  
+  @ViewChild('editor') private editorElement!: ElementRef;
   private editor!: Quill;
-  suggestions: string = '';
-  isLoading: boolean = false;
+  isLoading = false;
+  suggestions: string[] = [];
 
-  constructor(private writerService: WriterService) {}
-
-  ngOnInit() {
-    this.initializeQuill();
+  ngOnInit(): void {
+    // Initialize Quill only in browser environment
+    if (typeof window !== 'undefined') {
+      this.initializeQuill();
+    }
   }
 
-  private initializeQuill() {
-    this.editor = new Quill(this.editorElement.nativeElement, {
-      theme: 'snow',
-      modules: {
-        toolbar: [
-          [{ 'header': [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline'],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          [{ 'align': [] }],
-          ['clean']
-        ]
-      }
-    });
+  private async initializeQuill(): Promise<void> {
+    try {
+      const Quill = (await import('quill')).default;
+      this.editor = new Quill(this.editorElement.nativeElement, quillConfig);
+    } catch (error) {
+      console.error('Error initializing Quill:', error);
+    }
   }
 
-  async getAISuggestions() {
-    const content = this.editor.getText();
-    if (!content.trim()) return;
+  clearEditor(): void {
+    if (this.editor) {
+      this.editor.setText('');
+      this.suggestions = [];
+    }
+  }
+
+  getSuggestions(): void {
+    if (!this.editor) return;
 
     this.isLoading = true;
-    try {
-      const response = await this.writerService.getAISuggestions(content);
-      this.suggestions = response.suggestion;
-    } catch (error) {
-      console.error('Error getting AI suggestions:', error);
-      // TODO: Add error handling UI
-    } finally {
+    const content = this.editor.getText();
+    
+    // Simulate API call with setTimeout
+    setTimeout(() => {
+      // Mock suggestions - replace with actual API call
+      this.suggestions = [
+        'Consider adding more descriptive details to the scene',
+        'Try incorporating dialogue to make the story more engaging',
+        'You could expand on the character\'s emotions here'
+      ];
       this.isLoading = false;
-    }
+    }, 1500);
   }
 }

@@ -1,0 +1,36 @@
+<div class="writer-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Smart Writer Book</mat-card-title>
+      <mat-card-subtitle>Write your story with AI assistance</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="editor-container">
+        <div #editor></div>
+      </div>
+
+      <div class="suggestions-panel" *ngIf="suggestions.length > 0">
+        <h3>AI Suggestions</h3>
+        <mat-list>
+          <mat-list-item *ngFor="let suggestion of suggestions">
+            <mat-icon matListItemIcon>lightbulb</mat-icon>
+            <span matListItemTitle>{{ suggestion }}</span>
+          </mat-list-item>
+        </mat-list>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-stroked-button (click)="clearEditor()">
+        <mat-icon>clear</mat-icon>
+        Clear
+      </button>
+      <button mat-flat-button color="primary" (click)="getSuggestions()" [disabled]="isLoading">
+        <mat-icon>psychology</mat-icon>
+        Get AI Suggestions
+        <mat-spinner *ngIf="isLoading" [diameter]="20"></mat-spinner>
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
