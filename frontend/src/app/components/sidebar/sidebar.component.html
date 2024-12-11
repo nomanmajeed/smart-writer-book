@@ -1,0 +1,56 @@
+<div class="documents-section">   
+    <div class="section-header">
+      <span class="section-title">Documents</span>
+    </div>
+  
+    <div class="search-container">
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input type="text" placeholder="Search" />
+      </div>
+    </div>
+  
+    <button mat-button class="create-doc-btn" (click)="createNewDocument()">
+      <mat-icon>add</mat-icon>
+      Create new document
+    </button>
+  
+    <div class="document-list">
+      <ng-container *ngIf="!isLoading; else loadingTpl">
+        <div *ngIf="error" class="error-message">
+          <mat-icon color="warn">error</mat-icon>
+          <span>{{ error }}</span>
+          <button mat-button color="primary" (click)="loadDocuments()">Retry</button>
+        </div>
+  
+        <mat-nav-list *ngIf="!error">
+          <mat-list-item *ngFor="let doc of documents"
+                        [routerLink]="['/document', doc.id]"
+                        routerLinkActive="active">
+            <div class="list-item-content">
+              <mat-icon class="doc-icon">description</mat-icon>
+              <span class="doc-title">{{ doc.title }}</span>
+              <button mat-icon-button
+                      class="delete-btn"
+                      (click)="deleteDocument($event, doc)"
+                      matTooltip="Delete document">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          </mat-list-item>
+        </mat-nav-list>
+  
+        <div *ngIf="!error && documents.length === 0" class="empty-state">
+          <mat-icon>folder_open</mat-icon>
+          <span>No documents yet</span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+  
+  <ng-template #loadingTpl>
+    <div class="loading-state">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Loading documents...</span>
+    </div>
+  </ng-template>

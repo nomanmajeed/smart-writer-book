@@ -1,0 +1,28 @@
+.layout-container {
+    width: 100vw;
+    height: 100vh;
+  }
+  
+  .sidenav {
+    width: 330px;
+    background: #fff;
+  
+    .logo {
+      padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+  
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+        color: #1976d2;
+      }
+    }
+  }
+  
+  .main-content {
+    background: #fafafa;
+    padding: 24px;
+  }

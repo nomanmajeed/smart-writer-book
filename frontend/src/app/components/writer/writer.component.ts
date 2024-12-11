@@ -1,60 +1,109 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
+import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import type Quill from 'quill';
 import { quillConfig } from './quill.config';
 import { AIService, AISuggestion } from '../../services/ai.service';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { WriterService } from '../../services/writer.service';
+import { debounceTime, distinctUntilChanged, Subject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-writer',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
+    MatButtonModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatListModule,
     MatTooltipModule,
-    MatChipsModule
+    MatChipsModule,
+    MatSnackBarModule
   ],
   templateUrl: './writer.component.html',
-  styleUrls: ['./writer.component.css']
+  styleUrls: ['./writer.component.scss']
 })
-export class WriterComponent implements OnInit {
+export class WriterComponent implements OnInit, OnDestroy {
   @ViewChild('editor') private editorElement!: ElementRef;
   private editor!: Quill;
   private textChangeSubject = new Subject<string>();
+  private saveSubject = new Subject<void>();
+  private subscriptions: Subscription[] = [];
   
   isLoading = false;
+  isSaving = false;
+  documentId: string = '';
+  documentTitle: string = 'Untitled Document';
   suggestions: AISuggestion[] = [];
   selectedWord: string = '';
   wordAnalysis: AISuggestion[] = [];
   cursorPosition = { top: 0, left: 0 };
 
-  constructor(private aiService: AIService) {
-    // Set up debounced text change handler
-    this.textChangeSubject.pipe(
-      debounceTime(1000),
-      distinctUntilChanged()
-    ).subscribe(text => {
-      if (text.length > 10) {
-        this.checkGrammar(text);
-      }
-    });
+  constructor(
+    private aiService: AIService,
+    private writerService: WriterService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private snackBar: MatSnackBar
+  ) {
+    this.setupSubscriptions();
+  }
+
+  private setupSubscriptions(): void {
+    this.subscriptions.push(
+      this.textChangeSubject.pipe(
+        debounceTime(1000),
+        distinctUntilChanged()
+      ).subscribe(text => {
+        if (text.length > 10) {
+          this.checkGrammar(text);
+        }
+      })
+    );
+
+    this.subscriptions.push(
+      this.saveSubject.pipe(
+        debounceTime(2000)
+      ).subscribe(() => {
+        this.saveDocument();
+      })
+    );
   }
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
       this.initializeQuill();
+      this.subscriptions.push(
+        this.route.params.subscribe(params => {
+          this.documentId = params['id'];
+          if (this.documentId && this.documentId !== 'new') {
+            this.loadDocument();
+          }
+        })
+      );
     }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.textChangeSubject.complete();
+    this.saveSubject.complete();
+  }
+
+  onTitleChange(): void {
+    this.saveSubject.next();
   }
 
   private async initializeQuill(): Promise<void> {
@@ -62,14 +111,13 @@ export class WriterComponent implements OnInit {
       const Quill = (await import('quill')).default;
       this.editor = new Quill(this.editorElement.nativeElement, quillConfig);
       
-      // Set up text change handler
       this.editor.on('text-change', () => {
         const text = this.editor.getText();
         this.textChangeSubject.next(text);
         this.updateCursorPosition();
+        this.saveSubject.next();
       });
 
-      // Set up selection change handler
       this.editor.on('selection-change', (range) => {
         if (range) {
           this.updateCursorPosition();
@@ -84,6 +132,48 @@ export class WriterComponent implements OnInit {
       });
     } catch (error) {
       console.error('Error initializing Quill:', error);
+      this.showError('Error initializing editor');
+    }
+  }
+
+  private async loadDocument(): Promise<void> {
+    try {
+      const document = await this.writerService.getDocument(this.documentId).toPromise();
+      if (document) {
+        this.documentTitle = document.title;
+        if (document.content && this.editor) {
+          this.editor.setContents(document.content);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading document:', error);
+      this.showError('Error loading document');
+    }
+  }
+
+  public async saveDocument(): Promise<void> {
+    if (!this.editor || this.isSaving) return;
+
+    this.isSaving = true;
+    try {
+      const content = this.editor.getContents();
+      const data = {
+        title: this.documentTitle,
+        content: content
+      };
+
+      if (this.documentId === 'new') {
+        const newDoc = await this.writerService.createDocument(this.documentTitle, JSON.stringify(content) as any);
+        this.documentId = (newDoc as any).id;
+        await this.router.navigate(['/document', this.documentId], { replaceUrl: true });
+      } else {
+        await this.writerService.updateDocument(this.documentId, data).toPromise();
+      }
+    } catch (error) {
+      console.error('Error saving document:', error);
+      this.showError('Error saving document');
+    } finally {
+      this.isSaving = false;
     }
   }
 
@@ -94,10 +184,10 @@ export class WriterComponent implements OnInit {
       if (bounds) {
         const editorBounds = this.editorElement.nativeElement.getBoundingClientRect();
         
-        // Position suggestions to the right of the cursor
+        // Position suggestions closer to the text
         this.cursorPosition = {
-          top: bounds.top + editorBounds.top - 10, // Slight offset up
-          left: bounds.left + editorBounds.left + bounds.width + 10 // Position to right with offset
+          top: editorBounds.top, // Position below the line
+          left: editorBounds.left // Align with the start of selection
         };
       }
     }
@@ -108,6 +198,8 @@ export class WriterComponent implements OnInit {
       this.editor.setText('');
       this.suggestions = [];
       this.wordAnalysis = [];
+      this.documentTitle = 'Untitled Document';
+      this.router.navigate(['/document/new']);
     }
   }
 
@@ -125,6 +217,7 @@ export class WriterComponent implements OnInit {
       error: (error) => {
         console.error('Error getting suggestions:', error);
         this.isLoading = false;
+        this.showError('Error getting AI suggestions');
       }
     });
   }
@@ -135,11 +228,12 @@ export class WriterComponent implements OnInit {
       next: (grammarSuggestions) => {
         this.suggestions = grammarSuggestions;
         this.isLoading = false;
-        this.updateCursorPosition(); // Update position when new suggestions arrive
+        this.updateCursorPosition();
       },
       error: (error) => {
         console.error('Error checking grammar:', error);
         this.isLoading = false;
+        this.showError('Error checking grammar');
       }
     });
   }
@@ -149,7 +243,10 @@ export class WriterComponent implements OnInit {
       next: (analysis) => {
         this.wordAnalysis = analysis;
       },
-      error: (error) => console.error('Error getting word analysis:', error)
+      error: (error) => {
+        console.error('Error getting word analysis:', error);
+        this.showError('Error analyzing word');
+      }
     });
   }
 
@@ -163,19 +260,15 @@ export class WriterComponent implements OnInit {
     let currentLineEnd = text.indexOf('\n', selection.index);
     if (currentLineEnd === -1) currentLineEnd = text.length;
 
-    // Get the current line text
     const currentLine = text.substring(currentLineStart, currentLineEnd);
 
-    // Apply the suggestion based on type
     switch (suggestion.type.toLowerCase()) {
       case 'grammar':
-        // For grammar suggestions, replace the entire line
         this.editor.deleteText(currentLineStart, currentLine.length);
         this.editor.insertText(currentLineStart, currentLine + '.');
         break;
       
       case 'style':
-        // For style suggestions (like js -> JavaScript), replace the specific word
         const jsIndex = currentLine.toLowerCase().indexOf('js');
         if (jsIndex !== -1) {
           const absoluteIndex = currentLineStart + jsIndex;
@@ -185,11 +278,13 @@ export class WriterComponent implements OnInit {
         break;
 
       case 'feedback':
-        // For feedback, just clear suggestions as it's informational
         break;
     }
 
-    // Clear suggestions after applying
+    this.suggestions = [];
+  }
+
+  closeSuggestions(): void {
     this.suggestions = [];
   }
 
@@ -207,7 +302,7 @@ export class WriterComponent implements OnInit {
   }
 
   getSuggestionColor(type: string): string {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'grammar':
         return 'warn';
       case 'content':
@@ -217,5 +312,13 @@ export class WriterComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
+    });
   }
 }

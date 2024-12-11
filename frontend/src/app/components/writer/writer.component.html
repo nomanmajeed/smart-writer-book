@@ -1,21 +1,70 @@
 <div class="writer-container">
   <mat-card>
     <mat-card-header>
-      <mat-card-title>Smart Writer Book</mat-card-title>
-      <mat-card-subtitle>Write your story with AI assistance</mat-card-subtitle>
+      <mat-card-title>
+        <input
+          [(ngModel)]="documentTitle"
+          (blur)="onTitleChange()"
+          class="title-input"
+          placeholder="Document Title"
+        />
+      </mat-card-title>
+      <mat-card-subtitle>
+        Write your story with AI assistance
+        <span *ngIf="isSaving" class="saving-indicator">
+          <mat-spinner diameter="16"></mat-spinner>
+          Saving...
+        </span>
+      </mat-card-subtitle>
+      <span class="header-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="saveDocument()"
+          [disabled]="isSaving"
+        >
+          <mat-icon>save</mat-icon>
+          Save
+        </button>
+      </span>
     </mat-card-header>
 
     <mat-card-content>
       <div class="editor-container">
         <div #editor></div>
-        
         <!-- Floating suggestions panel -->
-        <div class="floating-suggestions" *ngIf="suggestions.length > 0" [style.top.px]="cursorPosition.top" [style.left.px]="cursorPosition.left">
+        <div
+          class="floating-suggestions"
+          *ngIf="suggestions.length > 0"
+          [style.top.px]="cursorPosition.top"
+          [style.left.px]="cursorPosition.left"
+        >
           <mat-card>
+            <div class="suggestions-header">
+              <div class="header-left">
+                <mat-icon>auto_fix_high</mat-icon>
+                <span>Suggestions</span>
+              </div>
+              <button
+                mat-icon-button
+                class="close-button"
+                (click)="closeSuggestions()"
+                matTooltip="Close suggestions"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
             <mat-card-content>
               <mat-list dense>
-                <mat-list-item *ngFor="let suggestion of suggestions" [class]="suggestion.type" (click)="applySuggestion(suggestion)">
-                  <mat-icon matListItemIcon [matTooltip]="suggestion.confidence | percent">
+                <mat-list-item
+                  *ngFor="let suggestion of suggestions"
+                  [class]="suggestion.type"
+                  (click)="applySuggestion(suggestion)"
+                >
+                  <mat-icon
+                    matListItemIcon
+                    [matTooltip]="suggestion.confidence | percent"
+                  >
                     {{ getSuggestionIcon(suggestion.type) }}
                   </mat-icon>
                   <span matListItemTitle>{{ suggestion.suggestion }}</span>
@@ -30,8 +79,13 @@
       <div class="suggestions-panel" *ngIf="suggestions.length > 0">
         <h3>AI Suggestions</h3>
         <mat-list>
-          <mat-list-item *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
-            <mat-icon matListItemIcon>{{ getSuggestionIcon(suggestion.type) }}</mat-icon>
+          <mat-list-item
+            *ngFor="let suggestion of suggestions"
+            (click)="applySuggestion(suggestion)"
+          >
+            <mat-icon matListItemIcon>{{
+              getSuggestionIcon(suggestion.type)
+            }}</mat-icon>
             <span matListItemTitle>{{ suggestion.suggestion }}</span>
           </mat-list-item>
         </mat-list>
@@ -43,7 +97,17 @@
         <mat-icon>clear</mat-icon>
         Clear
       </button>
-      <button mat-flat-button color="primary" (click)="getSuggestions()" [disabled]="isLoading">
+      <span class="action-spacer"></span>
+      <button mat-stroked-button color="primary" (click)="saveDocument()">
+        <mat-icon>save</mat-icon>
+        Save
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="getSuggestions()"
+        [disabled]="isLoading"
+      >
         <mat-icon>psychology</mat-icon>
         Get AI Suggestions
         <mat-spinner *ngIf="isLoading" [diameter]="20"></mat-spinner>
