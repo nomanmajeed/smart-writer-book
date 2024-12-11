@@ -17,6 +17,15 @@ from datetime import timedelta
 # Load environment variables from .env file
 load_dotenv()
 
+# Load environment variables
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# OpenAI API Key
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -81,8 +90,11 @@ SIMPLE_JWT = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:4200').split(',')
+CORS_ALLOW_ALL_ORIGINS = True  # For development only
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",  # Angular dev server
+]
 
 # Media Files
 MEDIA_URL = '/media/'

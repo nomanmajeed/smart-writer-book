@@ -8,14 +8,31 @@
     <mat-card-content>
       <div class="editor-container">
         <div #editor></div>
+        
+        <!-- Floating suggestions panel -->
+        <div class="floating-suggestions" *ngIf="suggestions.length > 0" [style.top.px]="cursorPosition.top" [style.left.px]="cursorPosition.left">
+          <mat-card>
+            <mat-card-content>
+              <mat-list dense>
+                <mat-list-item *ngFor="let suggestion of suggestions" [class]="suggestion.type" (click)="applySuggestion(suggestion)">
+                  <mat-icon matListItemIcon [matTooltip]="suggestion.confidence | percent">
+                    {{ getSuggestionIcon(suggestion.type) }}
+                  </mat-icon>
+                  <span matListItemTitle>{{ suggestion.suggestion }}</span>
+                </mat-list-item>
+              </mat-list>
+            </mat-card-content>
+          </mat-card>
+        </div>
       </div>
 
+      <!-- Bottom suggestions panel -->
       <div class="suggestions-panel" *ngIf="suggestions.length > 0">
         <h3>AI Suggestions</h3>
         <mat-list>
-          <mat-list-item *ngFor="let suggestion of suggestions">
-            <mat-icon matListItemIcon>lightbulb</mat-icon>
-            <span matListItemTitle>{{ suggestion }}</span>
+          <mat-list-item *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
+            <mat-icon matListItemIcon>{{ getSuggestionIcon(suggestion.type) }}</mat-icon>
+            <span matListItemTitle>{{ suggestion.suggestion }}</span>
           </mat-list-item>
         </mat-list>
       </div>

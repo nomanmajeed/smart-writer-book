@@ -7,6 +7,8 @@
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.3s ease;
+  padding: 20px;
+  height: 100%;
 }
 
 .writer-container:hover {
@@ -47,6 +49,9 @@ mat-card-subtitle {
   position: relative;
   z-index: 0;
   /* overflow: hidden;  */
+  position: relative;
+  height: calc(100vh - 200px);
+  margin: 20px 0;
 }
 
 .editor-container:focus-within {
@@ -62,11 +67,20 @@ mat-card-subtitle {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
-.suggestions-panel h3 {
+.suggestions-panel h3,
+.analysis-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 16px 0;
   color: #1e293b;
   font-size: 18px;
   font-weight: 600;
+}
+
+.suggestions-panel h3 mat-icon,
+.analysis-panel h3 mat-icon {
+  color: #3b82f6;
 }
 
 mat-list-item {
@@ -171,6 +185,62 @@ mat-spinner {
   font-style: normal;
 }
 
+.analysis-panel {
+  margin: 24px 32px;
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+mat-chip-set {
+  margin-top: 8px;
+}
+
+mat-chip {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  font-size: 14px !important;
+}
+
+.floating-suggestions {
+  position: absolute;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 400px;
+  transform: translate(10px, 20px);
+}
+
+.floating-suggestions mat-card {
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.floating-suggestions mat-list-item {
+  margin: 4px 0;
+}
+
+/* Suggestion type styles */
+.grammar mat-icon {
+  color: #f44336;  /* Red for grammar issues */
+}
+
+.style mat-icon {
+  color: #2196f3;  /* Blue for style suggestions */
+}
+
+.feedback mat-icon {
+  color: #4caf50;  /* Green for positive feedback */
+}
+
+/* Quill editor styles */
+.ql-container {
+  height: calc(100% - 42px);  /* 42px is the toolbar height */
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .writer-container {
@@ -180,6 +250,7 @@ mat-spinner {
   mat-card-header,
   .editor-container,
   .suggestions-panel,
+  .analysis-panel,
   mat-card-actions {
     padding: 16px;
     margin: 16px;
