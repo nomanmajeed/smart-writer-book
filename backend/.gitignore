@@ -13,9 +13,12 @@ db.sqlite3-journal
 media/
 static/
 
+# ignore all .pyc files
+*.pyc
+
 # Migrations
-**/migrations/*.py
-!**/migrations/__init__.py
+# **/migrations/*.py
+# !**/migrations/__init__.py
 
 # Environment
 .env
