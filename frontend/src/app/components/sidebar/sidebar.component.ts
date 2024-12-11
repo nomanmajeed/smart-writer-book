@@ -87,7 +87,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   async createNewDocument() {
     try {
       const content = { ops: [{ insert: '\n' }] };
-      const newDoc = await this.writerService.createDocument('Untitled Document', content);
+      const newDoc = await this.writerService.createDocument('Untitled Document', content as any);
       if (newDoc) {
         this.documents.unshift(newDoc as Document);
         await this.router.navigate(['/document', (newDoc as Document).id]);
